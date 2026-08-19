@@ -121,12 +121,14 @@ final class VpnManager {
         return tunnelManager
     }
 
-    // This app's Xray-core build reads its TUN fd from the "xray.tun.fd" env
-    // var (set by PacketTunnelProvider) and only attaches to it when the
-    // config carries a matching {"protocol": "tun"} inbound — Remnawave's
-    // per-server config only ships "socks"/"http" local inbounds (meant for
-    // proxy-mode clients like Happ), so this app appends its own tun inbound
-    // before handing the config to the core. Existing inbounds are left alone.
+    // The TUN fd reaches Xray-core as an explicit parameter to
+    // CoreController.startLoop(_:tunFd:) (confirmed against the real built
+    // framework — see PacketTunnelProvider.startXrayCore), not via an env
+    // var. The core still only attaches that fd when the config carries a
+    // matching {"protocol": "tun"} inbound, though — Remnawave's per-server
+    // config only ships "socks"/"http" local inbounds (meant for proxy-mode
+    // clients like Happ), so this app appends its own tun inbound before
+    // handing the config to the core. Existing inbounds are left alone.
     // Identical logic to Android's VpnManager.insertTunInbound.
     private func insertTunInbound(_ raw: String) -> String {
         guard let data = raw.data(using: .utf8),
