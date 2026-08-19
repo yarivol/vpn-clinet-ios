@@ -23,6 +23,14 @@ import Foundation
 import NetworkExtension
 import Observation
 
+// Same reasoning as VpnViewModel: connect()/ensureManager() do async
+// NETunnelProviderManager work whose await can resume off the main thread,
+// and connectionState/errorEvents are read directly by SwiftUI. @MainActor
+// guarantees every mutation (including from the @objc NEVPNStatusDidChange
+// notification handler, which Swift hops to the main actor for
+// automatically on an @objc method of a @MainActor class) lands on the
+// main thread.
+@MainActor
 @Observable
 final class VpnManager {
     static let shared = VpnManager()

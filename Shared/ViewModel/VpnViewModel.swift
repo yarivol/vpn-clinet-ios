@@ -34,6 +34,14 @@ enum DashboardRefreshEvent {
 
 private let dashboardAutoRefreshIntervalSeconds: UInt64 = 60 * 60
 
+// Every mutating method here does real async work (URLSession requests,
+// Keychain calls via TokenStore) whose `await` can resume on a background
+// executor - without @MainActor, state mutations after that resume point
+// (subscription, servers, connectionState, etc., all read directly by
+// SwiftUI views) wouldn't be guaranteed to happen on the main thread.
+// @MainActor makes Swift insert the hop back automatically on every await,
+// matching Apple's own guidance for @Observable view models doing async work.
+@MainActor
 @Observable
 final class VpnViewModel {
     private let authRepository: AuthRepository
