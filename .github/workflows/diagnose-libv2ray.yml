@@ -1,0 +1,47 @@
+# One-off diagnostic - dumps the actual Swift-visible interface of the
+# Libv2ray module (as Xcode's own "Generated Interface" would show) so the
+# exact type/function names PacketTunnelProvider.swift needs can be read
+# directly instead of guessed. Reuses the Libv2ray.xcframework artifact from
+# a prior build-ios-app.yml run instead of rebuilding it (faster iteration).
+# Not meant to stay long-term - delete once PacketTunnelProvider.swift's
+# symbol names are confirmed correct.
+
+name: Diagnose Libv2ray Swift interface
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_run_id:
+        description: "Run ID of a build-ios-app.yml run that has the Libv2ray-xcframework artifact"
+        required: true
+
+jobs:
+  diagnose:
+    runs-on: macos-latest
+    steps:
+      - name: Download Libv2ray.xcframework
+        uses: actions/download-artifact@v4
+        with:
+          name: Libv2ray-xcframework
+          path: Frameworks/Libv2ray.xcframework
+          github-token: ${{ github.token }}
+          run-id: ${{ github.event.inputs.source_run_id }}
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Print Swift interface for Libv2ray (device)
+        run: |
+          xcrun swift-ide-test -print-module -module-to-print=Libv2ray \
+            -source-filename /dev/null \
+            -F Frameworks/Libv2ray.xcframework/ios-arm64 \
+            -sdk "$(xcrun --sdk iphoneos --show-sdk-path)" \
+            -target arm64-apple-ios17.0
+
+      - name: Print Swift interface for Libv2ray (simulator)
+        run: |
+          xcrun swift-ide-test -print-module -module-to-print=Libv2ray \
+            -source-filename /dev/null \
+            -F "Frameworks/Libv2ray.xcframework/ios-arm64_x86_64-simulator" \
+            -sdk "$(xcrun --sdk iphonesimulator --show-sdk-path)" \
+            -target arm64-apple-ios17.0-simulator
