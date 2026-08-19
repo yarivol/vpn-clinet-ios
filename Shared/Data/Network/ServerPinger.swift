@@ -16,13 +16,16 @@ import Network
 enum ServerPinger {
     private static let timeoutSeconds: TimeInterval = 3
 
-    /// Connect time in ms, or nil if unreachable/timed out.
+    /// Connect time in ms, or nil if unreachable/timed out/the port is out of
+    /// range (a plain UInt16(port) traps on overflow - server-supplied data,
+    /// so a malformed port should read as "can't ping", not crash the app).
     static func ping(host: String, port: Int) async -> Int? {
-        await withCheckedContinuation { continuation in
+        guard let port16 = UInt16(exactly: port) else { return nil }
+        return await withCheckedContinuation { continuation in
             let start = Date()
             let connection = NWConnection(
                 host: NWEndpoint.Host(host),
-                port: NWEndpoint.Port(integerLiteral: UInt16(port)),
+                port: NWEndpoint.Port(integerLiteral: port16),
                 using: .tcp
             )
 

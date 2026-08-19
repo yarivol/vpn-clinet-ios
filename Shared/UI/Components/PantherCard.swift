@@ -18,13 +18,23 @@ struct PantherCard<Content: View>: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: 24)
-        VStack(alignment: .leading, spacing: 0) {
+        let card = VStack(alignment: .leading, spacing: 0) {
             content()
         }
         .padding(contentPadding)
         .background(colors.cardFill, in: shape)
         .overlay(shape.stroke(colors.cardStroke, lineWidth: 1))
         .contentShape(shape)
-        .onTapGesture { onTap?() }
+
+        // Only attach a tap gesture when there's actually a handler - cards
+        // used purely as visual containers (e.g. MenuRow's PantherCard
+        // inside a NavigationLink/Button) would otherwise carry an
+        // always-present no-op gesture that can shadow the ancestor
+        // NavigationLink/Button's own tap across the whole row.
+        if let onTap {
+            card.onTapGesture(perform: onTap)
+        } else {
+            card
+        }
     }
 }

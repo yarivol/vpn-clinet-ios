@@ -23,7 +23,7 @@ struct IconTile: View {
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius)
-        Image(systemName: systemImage)
+        let icon = Image(systemName: systemImage)
             .font(.system(size: size * 0.42))
             .foregroundStyle(contentColor ?? colors.iconTint)
             .frame(width: size, height: size)
@@ -34,6 +34,15 @@ struct IconTile: View {
                 }
             }
             .contentShape(shape)
-            .onTapGesture { onTap?() }
+
+        // Only attach a tap gesture when there's actually a handler - an
+        // always-present no-op gesture on purely decorative icons (e.g.
+        // inside a MenuRow/PantherCard(onTap:)) can shadow the parent
+        // Button/NavigationLink's own tap in that exact spot.
+        if let onTap {
+            icon.onTapGesture(perform: onTap)
+        } else {
+            icon
+        }
     }
 }
