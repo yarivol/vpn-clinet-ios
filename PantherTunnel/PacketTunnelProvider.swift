@@ -13,9 +13,9 @@
 //  handleAppMessage(_:completionHandler:) for anything beyond start/stop.
 //
 //  Symbol names below were confirmed against the actual built
-//  Libv2ray.xcframework via a swiftc -typecheck probe run in CI (see
-//  .github/workflows/diagnose-libv2ray.yml / .github/diagnostics/) — not a
-//  guess. See the "GOMOBILE API NAMES" note below for what was learned.
+//  Libv2ray.xcframework via a one-off swiftc -typecheck probe run in CI
+//  (since removed) — not a guess. See the "GOMOBILE API NAMES" note below
+//  for what was learned.
 //
 
 import Libv2ray
@@ -138,7 +138,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         guard let controller = Libv2rayNewCoreController(handler) else {
             throw TunnelError.coreControllerCreationFailed
         }
-        try controller.startLoop(configJson, tunFd)
+        try controller.startLoop(configJson, tunFd: tunFd)
         coreController = controller
     }
 
@@ -200,15 +200,21 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
 }
 
 private final class XrayCallbackHandler: NSObject, Libv2rayCoreCallbackHandlerProtocol {
-    func startup() -> Int64 {
+    // The protocol's ObjC methods are typed `long`, which bridges to Swift's
+    // `Int` (not `Int64` - that's what `int64_t` bridges to, the type
+    // CoreController's queryStats/measureDelay use instead). Protocol
+    // conformance needs the exact bridged type, confirmed by CI.
+    func startup() -> Int {
         os_log("Xray core startup")
         return 0
     }
-    func shutdown() -> Int64 {
+    func shutdown() -> Int {
         os_log("Xray core shutdown")
         return 0
     }
-    func onEmitStatus(_ code: Int64, _ message: String?) -> Int64 {
+    // ObjC selector is onEmitStatus:p1: - the protocol requires the external
+    // label "p1" on the second parameter (confirmed by the same CI probe).
+    func onEmitStatus(_ code: Int, p1 message: String?) -> Int {
         os_log("onEmitStatus: %{public}d %{public}@", code, message ?? "")
         return 0
     }
