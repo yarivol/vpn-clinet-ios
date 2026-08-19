@@ -233,6 +233,21 @@ jobs:
           name: Libv2ray-xcframework
           path: Frameworks/Libv2ray.xcframework
 
+      # PacketTunnelProvider.ensureGeoAssets() copies these out of the
+      # extension's own bundle at runtime (Bundle.main.url(forResource:)) -
+      # without them actually present as PantherTunnel target resources,
+      # that lookup silently returns nil and Xray-core starts with no
+      # geoip/geosite routing data at all. XcodeGen bundles any non-code file
+      # found under a target's `sources` path as a resource automatically, so
+      # just placing them in PantherTunnel/ before `xcodegen generate` is
+      # enough - same URLs build-xray-framework already uses to compile the
+      # Go library itself.
+      - name: Download geoip/geosite assets into PantherTunnel
+        run: |
+          curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat -o PantherTunnel/geoip.dat
+          curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -o PantherTunnel/geosite.dat
+          curl -sL https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip-only-cn-private.dat -o PantherTunnel/geoip-only-cn-private.dat
+
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 

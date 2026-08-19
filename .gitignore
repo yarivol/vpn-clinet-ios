@@ -6,6 +6,10 @@ pantherapp.xcodeproj/
 # source, and too large to commit (see project.yml's PantherTunnel target).
 Frameworks/
 
+# Fetched fresh in CI (build-ipa-full job) - not source, updates upstream
+# periodically, too large to commit.
+PantherTunnel/*.dat
+
 # Standard Xcode/Swift build noise.
 .build/
 DerivedData/
