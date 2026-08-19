@@ -28,13 +28,21 @@
 #     Libv2ray at all. Meant to be sideloaded via AltStore/SideStore, which
 #     re-sign with the installer's own free Apple ID - only possible because
 #     this variant carries no entitlement a free account can't have.
+#  5. build-ipa-full - same idea but the REAL pantherapp target, extension
+#     included. An unsigned build doesn't check entitlement eligibility at
+#     all (that only happens when something actually signs it), so this is
+#     worth producing and trying - AltStore/SideStore might install it with
+#     the NetworkExtension entitlement silently stripped (VPN inert, same as
+#     uitest) rather than failing outright. Genuinely unverified either way;
+#     that's the point of trying it against a real installer instead of
+#     guessing.
 #
 # build-app/run-tests do NOT produce a device-installable/App-Store build for
 # the REAL app - that needs real signing plus a paid Apple Developer account
 # for the Network Extension entitlement. They're "does the whole app actually
 # compile and link", which was previously impossible to check before reaching
-# a Mac. build-ipa-uitest is the one job here that produces something
-# installable, at the cost of leaving the VPN functionality out entirely.
+# a Mac. build-ipa-uitest and build-ipa-full are the two jobs that produce
+# something installable.
 
 name: Build iOS app
 
@@ -212,3 +220,47 @@ jobs:
         with:
           name: pantherapp-uitest-ipa
           path: pantherapp-uitest.ipa
+
+  build-ipa-full:
+    needs: build-xray-framework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Libv2ray.xcframework
+        uses: actions/download-artifact@v4
+        with:
+          name: Libv2ray-xcframework
+          path: Frameworks/Libv2ray.xcframework
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (real device, unsigned)
+        run: |
+          xcodebuild build \
+            -project pantherapp.xcodeproj \
+            -scheme pantherapp \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+      - name: Package .ipa
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/pantherapp.app"
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r pantherapp-full.ipa Payload
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: pantherapp-full-ipa
+          path: pantherapp-full.ipa
