@@ -3,6 +3,9 @@
 "action_login_with_link" = "Log In With Link";
 "action_or" = "or";
 "action_cancel" = "Cancel";
+"action_back" = "Back";
+"action_refresh" = "Refresh";
+"action_ping_servers" = "Check ping";
 
 /* Auth */
 "auth_signing_in" = "Signing in…";

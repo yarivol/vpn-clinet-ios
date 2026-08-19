@@ -90,6 +90,8 @@ struct DevicesView: View {
             IconTile(systemImage: "chevron.left", size: 52, cornerRadius: 16, containerColor: colors.cardFill, contentColor: colors.textPrimary) {
                 dismiss()
             }
+            .accessibilityLabel(Text("action_back"))
+            .accessibilityAddTraits(.isButton)
             Spacer()
             if viewModel.isLoadingDevices {
                 ProgressView().tint(colors.accent)
@@ -97,6 +99,8 @@ struct DevicesView: View {
                 IconTile(systemImage: "arrow.clockwise", size: 40) {
                     Task { await viewModel.loadDevices() }
                 }
+                .accessibilityLabel(Text("action_refresh"))
+                .accessibilityAddTraits(.isButton)
             }
         }
         .padding(.top, 4)
@@ -136,6 +140,7 @@ private struct DeviceRow: View {
                         Image(systemName: "trash")
                             .foregroundStyle(colors.statusPoor)
                     }
+                    .accessibilityLabel(Text("devices_remove_action"))
                 }
             }
             if isCurrent {

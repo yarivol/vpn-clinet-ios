@@ -93,6 +93,8 @@ struct TrafficStatsView: View {
             IconTile(systemImage: "chevron.left", size: 52, cornerRadius: 16, containerColor: colors.cardFill, contentColor: colors.textPrimary) {
                 dismiss()
             }
+            .accessibilityLabel(Text("action_back"))
+            .accessibilityAddTraits(.isButton)
             Spacer()
         }
         .padding(.top, 4)

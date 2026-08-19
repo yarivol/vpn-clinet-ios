@@ -3,6 +3,9 @@
 "action_login_with_link" = "Войти по ссылке";
 "action_or" = "или";
 "action_cancel" = "Отмена";
+"action_back" = "Назад";
+"action_refresh" = "Обновить";
+"action_ping_servers" = "Проверить пинг";
 
 /* Auth */
 "auth_signing_in" = "Входим…";

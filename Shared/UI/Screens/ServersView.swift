@@ -75,6 +75,8 @@ struct ServersView: View {
                 IconTile(systemImage: "waveform.path.ecg", size: 40) {
                     Task { await viewModel.pingAllServers() }
                 }
+                .accessibilityLabel(Text("action_ping_servers"))
+                .accessibilityAddTraits(.isButton)
             }
             if viewModel.isLoadingDashboard {
                 ProgressView().tint(colors.accent)
@@ -82,6 +84,8 @@ struct ServersView: View {
                 IconTile(systemImage: "arrow.clockwise", size: 40) {
                     Task { await viewModel.loadDashboard(showFeedback: true) }
                 }
+                .accessibilityLabel(Text("action_refresh"))
+                .accessibilityAddTraits(.isButton)
             }
         }
     }
