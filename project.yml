@@ -122,6 +122,11 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.panthervpn.pantherapp.PantherTunnel
         PRODUCT_NAME: PantherTunnel
         SKIP_INSTALL: YES
+        # Go's runtime DNS resolver (compiled into Libv2ray.xcframework via
+        # cgo) references libresolv's res_9_* symbols directly - without
+        # this the linker fails with "Undefined symbols ... referenced from:
+        # _runtime.text in Libv2ray(go.o)". Confirmed by CI.
+        OTHER_LDFLAGS: -lresolv
     dependencies:
       # Built by the "build-xray-framework" job in
       # .github/workflows/build-ios-app.yml (or manually via
