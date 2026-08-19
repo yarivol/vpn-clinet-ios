@@ -1,7 +1,7 @@
 //
 //  PacketTunnelProvider.swift
-//  PantherTunnel (Network Extension target — not yet created in Xcode, see
-//  the "SETUP NEEDED" note at the bottom of this file)
+//  PantherTunnel (Network Extension target, wired up via project.yml — see
+//  the "SETUP STATUS" note at the bottom of this file)
 //
 //  Owns the Xray-core engine lifecycle on iOS. Mirrors Android's
 //  vpn/PantherVpnService.kt as closely as the platform allows — same TUN
@@ -12,9 +12,13 @@
 //  to it only through NETunnelProviderManager + this class's
 //  handleAppMessage(_:completionHandler:) for anything beyond start/stop.
 //
-//  ⚠️ NAMING NOT YET VERIFIED — see the "GOMOBILE API NAMES" note below.
+//  Symbol names below were confirmed against the actual built
+//  Libv2ray.xcframework via a swiftc -typecheck probe run in CI (see
+//  .github/workflows/diagnose-libv2ray.yml / .github/diagnostics/) — not a
+//  guess. See the "GOMOBILE API NAMES" note below for what was learned.
 //
 
+import Libv2ray
 import NetworkExtension
 import os.log
 
@@ -107,28 +111,33 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         throw TunnelError.tunFileDescriptorNotFound
     }
 
-    // MARK: - Xray-core (⚠️ NOT YET VERIFIED — see note below)
+    // MARK: - Xray-core
 
-    // GOMOBILE API NAMES: this mirrors Android's exact calls —
-    //   Libv2ray.initCoreEnv(assetPath, xudpBaseKey)
-    //   Libv2ray.newCoreController(callbackHandler) -> CoreController
-    //   controller.startLoop(configJson, tunFd)
-    //   controller.stopLoop()
-    //   controller.queryAllOutboundTrafficStats() -> String
-    // gomobile's `bind -target=ios` generates an Obj-C/Swift interface from
-    // the same Go package (github.com/2dust/AndroidLibXrayLite), so the
-    // *shape* of this API will match — but gomobile's exact generated Swift
-    // symbol names (e.g. "Libv2rayCoreController" vs "Libv2ray.CoreController")
-    // depend on its ObjC-flattening convention and can only be confirmed once
-    // Libv2ray.xcframework is actually built (see .github/workflows/build-ios-xray.yml)
-    // and inspected in Xcode (Product > Generated Interface, or the umbrella
-    // header). Fix the type/method names below against that before this compiles.
+    // GOMOBILE API NAMES (confirmed via CI probe, see file header):
+    //   gomobile's `gobind -lang=objc` emits loose C functions prefixed with
+    //   the module name ("Libv2rayInitCoreEnv", "Libv2rayNewCoreController"),
+    //   NOT members grouped under a "Libv2ray" namespace/enum the way
+    //   Android's Kotlin binding reads (`Libv2ray.initCoreEnv(...)`) — that
+    //   was the actual cause of the "cannot find type" build failure, not
+    //   the type names themselves (which were already right):
+    //     Libv2rayInitCoreEnv(assetPath, xudpBaseKey)
+    //     Libv2rayNewCoreController(callbackHandler) -> Libv2rayCoreController?
+    //     controller.startLoop(configJson, tunFd)
+    //     controller.stopLoop()
+    //     controller.queryAllOutboundTrafficStats() -> String
+    //   Also: the ObjC header declares a callback *protocol* and a callback
+    //   *class* with the identical name ("CoreCallbackHandler") — Swift
+    //   disambiguates by importing the protocol as
+    //   "Libv2rayCoreCallbackHandlerProtocol", which is what
+    //   XrayCallbackHandler below conforms to.
     private static var coreController: Libv2rayCoreController?
 
     private static func startXrayCore(configJson: String, tunFd: Int32) throws {
-        Libv2ray.initCoreEnv(FileManager.default.temporaryDirectory.path, "")
+        Libv2rayInitCoreEnv(FileManager.default.temporaryDirectory.path, "")
         let handler = XrayCallbackHandler()
-        let controller = Libv2ray.newCoreController(handler)
+        guard let controller = Libv2rayNewCoreController(handler) else {
+            throw TunnelError.coreControllerCreationFailed
+        }
         try controller.startLoop(configJson, tunFd)
         coreController = controller
     }
@@ -143,7 +152,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     // Same lesson as Android: gomobile's Go-side asset-bundle fallback isn't
     // reliable, so this app copies geoip.dat/geosite.dat/geoip-only-cn-private.dat
     // out of the extension's own bundle resources to disk once, and points
-    // Libv2ray.initCoreEnv at that directory (see startXrayCore above).
+    // Libv2rayInitCoreEnv at that directory (see startXrayCore above).
     private func ensureGeoAssets() {
         let fileNames = ["geoip.dat", "geosite.dat", "geoip-only-cn-private.dat"]
         let targetDir = FileManager.default.temporaryDirectory
@@ -186,6 +195,7 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     private enum TunnelError: Error {
         case missingConfig
         case tunFileDescriptorNotFound
+        case coreControllerCreationFailed
     }
 }
 
@@ -204,19 +214,18 @@ private final class XrayCallbackHandler: NSObject, Libv2rayCoreCallbackHandlerPr
     }
 }
 
-// SETUP NEEDED (do this in Xcode on your Mac, I can't create Xcode targets
-// from here):
-// 1. File > New > Target > Network Extension > Packet Tunnel Provider, name
-//    it "PantherTunnel". Xcode generates its own PacketTunnelProvider.swift +
-//    Info.plist inside a new PantherTunnel/ folder — delete its generated
-//    PacketTunnelProvider.swift and add this file to that target instead
-//    (same folder location assumed above).
-// 2. Add the "Network Extensions" capability (packet-tunnel-provider) to both
-//    the main app target AND this extension target, plus "App Groups" on
-//    both (needed later for main-app <-> extension data sharing) — requires
-//    an Apple Developer Program account.
-// 3. Add Libv2ray.xcframework (see .github/workflows/build-ios-xray.yml) to
-//    this extension target's "Frameworks and Libraries".
-// 4. Fix the Libv2ray* type/method names in this file against the actual
-//    built framework's generated interface (Xcode: right-click the framework
-//    > "Generated Interface", or check its umbrella .h).
+// SETUP STATUS: the PantherTunnel target, its Network Extension entitlement,
+// and linking Libv2ray.xcframework are all now handled by project.yml (see
+// its header comment) — `xcodegen generate` sets all of that up, no manual
+// Xcode target creation needed any more. The Libv2ray* symbol names above
+// are confirmed correct (see the file header + startXrayCore's comment).
+//
+// Still needs a real Mac + Apple Developer Program account to actually
+// verify, though — this only proves the Swift compiles against the real
+// framework, not that it works over the air:
+// 1. "App Groups" capability isn't wired into project.yml yet — add it to
+//    both targets there if/when main-app <-> extension data sharing is
+//    needed (e.g. the live traffic stats TODO in parseAndLogStats below).
+// 2. Run on a real device (NetworkExtension doesn't fully function in the
+//    Simulator) and confirm startLoop/stopLoop/the TUN fd scan actually
+//    work end-to-end against a real Xray config.
