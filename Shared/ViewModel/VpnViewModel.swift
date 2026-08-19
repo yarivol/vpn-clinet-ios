@@ -83,7 +83,13 @@ final class VpnViewModel {
     let dashboardRefreshEvents = EventEmitter<DashboardRefreshEvent>()
     var vpnErrorEvents: AsyncStream<String> { vpnManager.errorEvents.stream }
 
-    private var hourlyRefreshTask: Task<Void, Never>?
+    // nonisolated(unsafe): deinit isn't guaranteed to run on the main actor
+    // even for a @MainActor class (deallocation can happen from whatever
+    // thread drops the last reference), so deinit can't touch a normal
+    // main-actor-isolated property. Safe here because Task.cancel() is
+    // itself thread-safe/idempotent - this property is never mutated
+    // concurrently with the cancel, only read-then-cancelled.
+    nonisolated(unsafe) private var hourlyRefreshTask: Task<Void, Never>?
 
     init(
         authRepository: AuthRepository,
