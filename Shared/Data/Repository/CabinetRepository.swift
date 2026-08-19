@@ -90,7 +90,11 @@ final class CabinetRepository {
         return parseServers(from: raw)
     }
 
-    private func parseServers(from data: Data) -> [VpnServer] {
+    // internal (not private) so pantherappTests can exercise this directly via
+    // @testable import - this parsing logic is exactly the kind of thing that
+    // silently regresses (see the hysteria flat-address/port bug found during
+    // the Xray-core migration) without a pinned-down test.
+    func parseServers(from data: Data) -> [VpnServer] {
         guard let root = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }

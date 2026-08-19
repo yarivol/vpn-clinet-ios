@@ -79,6 +79,26 @@ targets:
     dependencies:
       - target: PantherTunnel
         embed: true
+    scheme:
+      testTargets:
+        - pantherappTests
+
+  pantherappTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests/pantherappTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.panthervpn.pantherapp.Tests
+        # Deliberately NOT hosted (no TEST_HOST/BUNDLE_LOADER) - these tests
+        # are pure Foundation logic (CabinetRepository.parseServers) with no
+        # need to run inside the actual app process. If @testable import
+        # pantherapp turns out to need hosting after all, that'll show up as
+        # a clear, isolated failure in the "run-tests" CI job only - it can't
+        # affect the "build-app" job, which doesn't reference this target.
+    dependencies:
+      - target: pantherapp
 
   PantherTunnel:
     type: app-extension

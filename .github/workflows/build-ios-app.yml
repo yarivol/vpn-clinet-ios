@@ -2,7 +2,7 @@
 # link check for everything under Shared/ and PantherTunnel/, none of which
 # can be built on the Windows machine this repo is normally edited from.
 #
-# Two jobs:
+# Three jobs:
 #  1. build-xray-framework - same gomobile pipeline as build-ios-xray.yml,
 #     duplicated here (not called as a dependency) so this workflow has no
 #     cross-workflow-artifact fragility and always builds against a fresh
@@ -14,6 +14,13 @@
 #     hand in Xcode - see project.yml's header comment), then builds for the
 #     iOS Simulator with signing disabled so no Apple Developer secrets are
 #     needed to catch real compile errors.
+#  3. run-tests - independent of build-app (own needs: on build-xray-framework
+#     only), runs the pantherappTests unit tests (currently just
+#     CabinetRepositoryParsingTests). Deliberately a separate job: this target
+#     is newer/less proven than the main app build, so a problem with it
+#     (e.g. the non-hosted @testable import turning out to need TEST_HOST)
+#     shows up as its own isolated red job instead of muddying the
+#     "does the app actually compile" signal from build-app.
 #
 # This does NOT produce a device-installable/App-Store build - that needs
 # real signing plus a paid Apple Developer account for the Network Extension
@@ -109,4 +116,53 @@ jobs:
             -scheme pantherapp \
             -destination "generic/platform=iOS Simulator" \
             -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO
+
+  run-tests:
+    needs: build-xray-framework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Libv2ray.xcframework
+        uses: actions/download-artifact@v4
+        with:
+          name: Libv2ray-xcframework
+          path: Frameworks/Libv2ray.xcframework
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      # Picks whatever iPhone simulator the runner's Xcode actually has
+      # installed, rather than hardcoding a device name that WWDC-cycle
+      # Xcode bumps on GitHub's macos-latest image would eventually break.
+      - name: Pick an available iOS Simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          data = json.load(sys.stdin)
+          for runtime, devices in data["devices"].items():
+              if "iOS" not in runtime:
+                  continue
+              for d in devices:
+                  if d["name"].startswith("iPhone"):
+                      print(d["udid"])
+                      sys.exit(0)
+          sys.exit(1)
+          ')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+
+      - name: Run unit tests
+        run: |
+          xcodebuild test \
+            -project pantherapp.xcodeproj \
+            -scheme pantherapp \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
             CODE_SIGNING_ALLOWED=NO
