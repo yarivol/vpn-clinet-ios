@@ -1,0 +1,112 @@
+# Builds the actual pantherapp iOS app on every push - the real compile +
+# link check for everything under Shared/ and PantherTunnel/, none of which
+# can be built on the Windows machine this repo is normally edited from.
+#
+# Two jobs:
+#  1. build-xray-framework - same gomobile pipeline as build-ios-xray.yml,
+#     duplicated here (not called as a dependency) so this workflow has no
+#     cross-workflow-artifact fragility and always builds against a fresh
+#     checkout of AndroidLibXrayLite's main branch.
+#  2. build-app - drops that framework at Frameworks/Libv2ray.xcframework
+#     (the exact path project.yml's PantherTunnel target expects), runs
+#     XcodeGen to regenerate pantherapp.xcodeproj from project.yml (so every
+#     .swift file actually gets built, not just whatever was last added by
+#     hand in Xcode - see project.yml's header comment), then builds for the
+#     iOS Simulator with signing disabled so no Apple Developer secrets are
+#     needed to catch real compile errors.
+#
+# This does NOT produce a device-installable/App-Store build - that needs
+# real signing plus a paid Apple Developer account for the Network Extension
+# entitlement. It's "does the whole app actually compile and link", which is
+# exactly what was previously impossible to check before reaching a Mac.
+
+name: Build iOS app
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-xray-framework:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout AndroidLibXrayLite
+        uses: actions/checkout@v4
+        with:
+          repository: 2dust/AndroidLibXrayLite
+          ref: main
+          path: AndroidLibXrayLite
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "AndroidLibXrayLite/go.mod"
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Download geoip/geosite assets
+        working-directory: AndroidLibXrayLite
+        run: |
+          mkdir -p assets data
+          curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat -o data/geoip.dat
+          curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -o data/geosite.dat
+          curl -sL https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip-only-cn-private.dat -o data/geoip-only-cn-private.dat
+          cp data/*.dat assets/
+
+      - name: gomobile init
+        working-directory: AndroidLibXrayLite
+        run: gomobile init
+
+      - name: go mod tidy
+        working-directory: AndroidLibXrayLite
+        run: go mod tidy
+
+      - name: gomobile bind (iOS + iOS Simulator)
+        working-directory: AndroidLibXrayLite
+        run: |
+          gomobile bind -v -target=ios,iossimulator -trimpath \
+            -ldflags='-s -w' \
+            -o Libv2ray.xcframework \
+            ./
+
+      - name: Upload Libv2ray.xcframework
+        uses: actions/upload-artifact@v4
+        with:
+          name: Libv2ray-xcframework
+          path: AndroidLibXrayLite/Libv2ray.xcframework
+
+  build-app:
+    needs: build-xray-framework
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Libv2ray.xcframework
+        uses: actions/download-artifact@v4
+        with:
+          name: Libv2ray-xcframework
+          path: Frameworks/Libv2ray.xcframework
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (iOS Simulator, unsigned)
+        run: |
+          xcodebuild build \
+            -project pantherapp.xcodeproj \
+            -scheme pantherapp \
+            -destination "generic/platform=iOS Simulator" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO

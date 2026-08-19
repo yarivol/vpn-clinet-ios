@@ -1,0 +1,121 @@
+/* Common actions */
+"action_open_bot" = "Открыть бота";
+"action_login_with_link" = "Войти по ссылке";
+"action_or" = "или";
+"action_cancel" = "Отмена";
+
+/* Auth */
+"auth_signing_in" = "Входим…";
+"auth_required_title" = "Нужен вход";
+"auth_required_subtitle" = "Вставьте ссылку подписки, которую вы получили от бота или на сайте";
+"auth_link_placeholder" = "Ссылка подписки";
+"auth_link_error" = "Неверная ссылка. Проверьте и попробуйте снова";
+"auth_bot_hint" = "Войдите через Telegram-бота PantherVPN — откройте бота и нажмите «Открыть приложение» в разделе «Моя подписка»";
+
+/* Tabs */
+"tab_home" = "Главная";
+"tab_servers" = "Серверы";
+"tab_protection" = "Защита";
+"tab_profile" = "Профиль";
+
+/* Home */
+"home_status_disconnected" = "Отключено";
+"home_status_connecting" = "Подключение…";
+"home_status_connected" = "Подключено";
+"home_subtitle_disconnected" = "Нажмите, чтобы подключиться";
+"home_subtitle_connecting" = "Устанавливаем защищённое соединение";
+"home_subtitle_connected" = "Ваше соединение защищено";
+"home_server_loading" = "Загрузка…";
+
+/* Servers */
+"servers_title" = "Серверы";
+"servers_all_section" = "Все серверы";
+"servers_empty" = "Список серверов пока недоступен";
+"servers_optimal_title" = "Оптимальный сервер";
+"servers_optimal_subtitle" = "Автоматически выберет сервер с наименьшим пингом";
+
+/* Protection */
+"protection_title" = "Защита";
+"protection_killswitch_title" = "Kill Switch";
+"protection_killswitch_desc" = "Блокировать интернет при обрыве VPN";
+"protection_adblock_title" = "Блокировка рекламы";
+"protection_adblock_desc" = "Скрывать рекламу в приложениях и браузерах";
+"protection_trackerblock_title" = "Блокировка трекеров";
+"protection_trackerblock_desc" = "Не давать трекерам следить за вашей активностью";
+
+/* Profile */
+"profile_title" = "Профиль";
+"profile_premium_default_name" = "PantherVPN Premium";
+"profile_subscription_active" = "Подписка активна";
+"profile_subscription_inactive" = "Нет активной подписки";
+"profile_days_left_format" = "Осталось дней: %d";
+"profile_traffic_month" = "Трафик за месяц";
+"profile_menu_devices" = "Мои устройства";
+"profile_menu_support" = "Поддержка";
+"profile_menu_settings" = "Настройки";
+"profile_menu_logout" = "Выйти";
+"profile_device_count_placeholder" = "—";
+
+/* Devices */
+"devices_title" = "Мои устройства";
+"devices_empty" = "Нет подключённых устройств";
+"devices_current_device" = "Это устройство";
+"devices_current_hint" = "Чтобы убрать это устройство, нажмите «Выйти» в профиле";
+"devices_remove_confirm_title" = "Удалить устройство?";
+"devices_remove_confirm_message" = "Устройство будет отключено от VPN. Понадобится войти заново, чтобы продолжить пользоваться сервисом на нём.";
+"devices_remove_action" = "Удалить";
+"devices_unknown_device" = "Неизвестное устройство";
+
+/* Traffic stats */
+"traffic_title" = "Статистика трафика";
+"traffic_last_30_days" = "За последние 30 дней";
+"traffic_empty" = "Пока нет данных об использовании трафика";
+"traffic_by_day" = "По дням";
+
+/* Settings */
+"settings_title" = "Настройки";
+"settings_language" = "Язык";
+"settings_style" = "Стиль";
+"settings_theme" = "Тема";
+"settings_about" = "О приложении";
+"settings_version_format" = "Версия %@";
+"settings_choose_language" = "Выберите язык";
+"settings_choose_style" = "Выберите стиль";
+"settings_choose_theme" = "Выберите тему";
+"lang_system" = "Как в системе";
+"lang_russian" = "Русский";
+"lang_english" = "English";
+"style_classic" = "Классический";
+"style_original" = "Оригинальный";
+"theme_dark" = "Тёмная";
+"theme_light" = "Светлая";
+"theme_system" = "Как в системе";
+
+/* Units */
+"unit_gb" = "ГБ";
+"unit_mb" = "МБ";
+"unit_kb" = "КБ";
+
+/* Short month names (index 1-12) */
+"month_short_1" = "янв";
+"month_short_2" = "фев";
+"month_short_3" = "мар";
+"month_short_4" = "апр";
+"month_short_5" = "мая";
+"month_short_6" = "июн";
+"month_short_7" = "июл";
+"month_short_8" = "авг";
+"month_short_9" = "сен";
+"month_short_10" = "окт";
+"month_short_11" = "ноя";
+"month_short_12" = "дек";
+
+/* Toasts / VPN errors (keys also used directly as VpnManager.reportError reason keys) */
+"toast_login_success" = "Успешная авторизация";
+"toast_login_failed" = "Не удалось войти. Запросите новую ссылку в боте";
+"toast_subscription_refreshed" = "Подписка обновлена успешно";
+"toast_subscription_refresh_failed" = "Не удалось обновить подписку";
+"vpn_error_config_fetch_failed" = "Не удалось получить конфигурацию VPN. Проверьте подписку и попробуйте снова";
+"vpn_error_permission_denied" = "Доступ к VPN не предоставлен";
+"vpn_error_tunnel_failed" = "Не удалось установить соединение. Попробуйте ещё раз";
+"vpn_error_generic" = "Не удалось установить соединение. Попробуйте ещё раз";

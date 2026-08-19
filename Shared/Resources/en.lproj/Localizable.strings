@@ -1,0 +1,121 @@
+/* Common actions */
+"action_open_bot" = "Open Bot";
+"action_login_with_link" = "Log In With Link";
+"action_or" = "or";
+"action_cancel" = "Cancel";
+
+/* Auth */
+"auth_signing_in" = "Signing in…";
+"auth_required_title" = "Sign-In Required";
+"auth_required_subtitle" = "Paste the subscription link you got from the bot or the website";
+"auth_link_placeholder" = "Subscription link";
+"auth_link_error" = "Invalid link. Check it and try again";
+"auth_bot_hint" = "Sign in through the PantherVPN Telegram bot — open the bot and tap “Open App” in the “My Subscription” section";
+
+/* Tabs */
+"tab_home" = "Home";
+"tab_servers" = "Servers";
+"tab_protection" = "Protection";
+"tab_profile" = "Profile";
+
+/* Home */
+"home_status_disconnected" = "Disconnected";
+"home_status_connecting" = "Connecting…";
+"home_status_connected" = "Connected";
+"home_subtitle_disconnected" = "Tap to connect";
+"home_subtitle_connecting" = "Establishing a secure connection";
+"home_subtitle_connected" = "Your connection is protected";
+"home_server_loading" = "Loading…";
+
+/* Servers */
+"servers_title" = "Servers";
+"servers_all_section" = "All servers";
+"servers_empty" = "Server list isn't available yet";
+"servers_optimal_title" = "Optimal Server";
+"servers_optimal_subtitle" = "Automatically picks the server with the lowest ping";
+
+/* Protection */
+"protection_title" = "Protection";
+"protection_killswitch_title" = "Kill Switch";
+"protection_killswitch_desc" = "Block internet access if the VPN drops";
+"protection_adblock_title" = "Ad Blocking";
+"protection_adblock_desc" = "Hide ads in apps and browsers";
+"protection_trackerblock_title" = "Tracker Blocking";
+"protection_trackerblock_desc" = "Stop trackers from following your activity";
+
+/* Profile */
+"profile_title" = "Profile";
+"profile_premium_default_name" = "PantherVPN Premium";
+"profile_subscription_active" = "Subscription active";
+"profile_subscription_inactive" = "No active subscription";
+"profile_days_left_format" = "Days left: %d";
+"profile_traffic_month" = "Traffic This Month";
+"profile_menu_devices" = "My Devices";
+"profile_menu_support" = "Support";
+"profile_menu_settings" = "Settings";
+"profile_menu_logout" = "Log Out";
+"profile_device_count_placeholder" = "—";
+
+/* Devices */
+"devices_title" = "My Devices";
+"devices_empty" = "No connected devices";
+"devices_current_device" = "This device";
+"devices_current_hint" = "To remove this device, tap “Log Out” in your profile";
+"devices_remove_confirm_title" = "Remove device?";
+"devices_remove_confirm_message" = "The device will be disconnected from the VPN. You'll need to sign in again to keep using the service on it.";
+"devices_remove_action" = "Remove";
+"devices_unknown_device" = "Unknown device";
+
+/* Traffic stats */
+"traffic_title" = "Traffic Statistics";
+"traffic_last_30_days" = "Over the last 30 days";
+"traffic_empty" = "No traffic data yet";
+"traffic_by_day" = "By day";
+
+/* Settings */
+"settings_title" = "Settings";
+"settings_language" = "Language";
+"settings_style" = "Style";
+"settings_theme" = "Theme";
+"settings_about" = "About";
+"settings_version_format" = "Version %@";
+"settings_choose_language" = "Choose language";
+"settings_choose_style" = "Choose style";
+"settings_choose_theme" = "Choose theme";
+"lang_system" = "System default";
+"lang_russian" = "Russian";
+"lang_english" = "English";
+"style_classic" = "Classic";
+"style_original" = "Original";
+"theme_dark" = "Dark";
+"theme_light" = "Light";
+"theme_system" = "System default";
+
+/* Units */
+"unit_gb" = "GB";
+"unit_mb" = "MB";
+"unit_kb" = "KB";
+
+/* Short month names (index 1-12) */
+"month_short_1" = "Jan";
+"month_short_2" = "Feb";
+"month_short_3" = "Mar";
+"month_short_4" = "Apr";
+"month_short_5" = "May";
+"month_short_6" = "Jun";
+"month_short_7" = "Jul";
+"month_short_8" = "Aug";
+"month_short_9" = "Sep";
+"month_short_10" = "Oct";
+"month_short_11" = "Nov";
+"month_short_12" = "Dec";
+
+/* Toasts / VPN errors (keys also used directly as VpnManager.reportError reason keys) */
+"toast_login_success" = "Signed in successfully";
+"toast_login_failed" = "Sign-in failed. Request a new link from the bot";
+"toast_subscription_refreshed" = "Subscription refreshed successfully";
+"toast_subscription_refresh_failed" = "Failed to refresh subscription";
+"vpn_error_config_fetch_failed" = "Couldn't fetch the VPN configuration. Check your subscription and try again";
+"vpn_error_permission_denied" = "VPN access wasn't granted";
+"vpn_error_tunnel_failed" = "Couldn't establish the connection. Please try again";
+"vpn_error_generic" = "Couldn't establish the connection. Please try again";

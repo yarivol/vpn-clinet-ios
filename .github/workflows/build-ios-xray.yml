@@ -1,0 +1,85 @@
+# Builds Libv2ray.xcframework (Xray-core, via gomobile) for iOS device +
+# simulator on a macOS runner — GitHub Actions gives free macOS runners with
+# Xcode preinstalled, which is what `gomobile bind -target=ios` needs and
+# what isn't available on the Windows machine this repo is normally edited
+# from. Mirrors the Android build documented in the Android app's
+# app/libs/README.md (same source repo, same gomobile toolchain, different
+# -target).
+#
+# Trigger manually (Actions tab > this workflow > Run workflow) whenever the
+# pinned AndroidLibXrayLite ref needs bumping — not on every push, this is a
+# slow, occasional build, not CI in the usual sense.
+#
+# Output: download the "Libv2ray-xcframework" artifact from the run, unzip,
+# and place it at Frameworks/Libv2ray.xcframework in the repo root (that's
+# the exact path project.yml's PantherTunnel target expects - only that
+# target links it, the main app never imports Libv2ray directly). Then run
+# `xcodegen generate` to pick it up - no manual Xcode "Frameworks and
+# Libraries" step needed. build-ios-app.yml does this same thing
+# automatically on every push.
+
+name: Build iOS Xray framework
+
+on:
+  workflow_dispatch:
+    inputs:
+      android_lib_xray_lite_ref:
+        description: "git ref of 2dust/AndroidLibXrayLite to build (branch/tag/commit)"
+        required: false
+        default: "main"
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout AndroidLibXrayLite
+        uses: actions/checkout@v4
+        with:
+          repository: 2dust/AndroidLibXrayLite
+          ref: ${{ github.event.inputs.android_lib_xray_lite_ref }}
+          path: AndroidLibXrayLite
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: "AndroidLibXrayLite/go.mod"
+
+      - name: Install gomobile
+        run: |
+          go install golang.org/x/mobile/cmd/gomobile@latest
+          go install golang.org/x/mobile/cmd/gobind@latest
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Download geoip/geosite assets
+        working-directory: AndroidLibXrayLite
+        run: |
+          mkdir -p assets data
+          curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat -o data/geoip.dat
+          curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -o data/geosite.dat
+          curl -sL https://raw.githubusercontent.com/Loyalsoldier/geoip/release/geoip-only-cn-private.dat -o data/geoip-only-cn-private.dat
+          cp data/*.dat assets/
+
+      - name: gomobile init
+        working-directory: AndroidLibXrayLite
+        run: gomobile init
+
+      - name: go mod tidy
+        working-directory: AndroidLibXrayLite
+        run: go mod tidy
+
+      # Builds device + simulator slices into one xcframework in a single
+      # invocation — same Go source AndroidLibXrayLite uses for the Android
+      # .aar, just a different -target.
+      - name: gomobile bind (iOS + iOS Simulator)
+        working-directory: AndroidLibXrayLite
+        run: |
+          gomobile bind -v -target=ios,iossimulator -trimpath \
+            -ldflags='-s -w' \
+            -o Libv2ray.xcframework \
+            ./
+
+      - name: Upload Libv2ray.xcframework
+        uses: actions/upload-artifact@v4
+        with:
+          name: Libv2ray-xcframework
+          path: AndroidLibXrayLite/Libv2ray.xcframework
