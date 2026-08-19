@@ -21,11 +21,20 @@
 #     (e.g. the non-hosted @testable import turning out to need TEST_HOST)
 #     shows up as its own isolated red job instead of muddying the
 #     "does the app actually compile" signal from build-app.
+#  4. build-ipa-uitest - builds the pantherapp-uitest target (see project.yml
+#     - same UI/logic, no PantherTunnel, no NetworkExtension entitlement) for
+#     a real device, unsigned, and zips it into an .ipa artifact. No
+#     dependency on build-xray-framework since this target doesn't link
+#     Libv2ray at all. Meant to be sideloaded via AltStore/SideStore, which
+#     re-sign with the installer's own free Apple ID - only possible because
+#     this variant carries no entitlement a free account can't have.
 #
-# This does NOT produce a device-installable/App-Store build - that needs
-# real signing plus a paid Apple Developer account for the Network Extension
-# entitlement. It's "does the whole app actually compile and link", which is
-# exactly what was previously impossible to check before reaching a Mac.
+# build-app/run-tests do NOT produce a device-installable/App-Store build for
+# the REAL app - that needs real signing plus a paid Apple Developer account
+# for the Network Extension entitlement. They're "does the whole app actually
+# compile and link", which was previously impossible to check before reaching
+# a Mac. build-ipa-uitest is the one job here that produces something
+# installable, at the cost of leaving the VPN functionality out entirely.
 
 name: Build iOS app
 
@@ -166,3 +175,40 @@ jobs:
             -scheme pantherapp \
             -destination "id=${{ steps.sim.outputs.udid }}" \
             CODE_SIGNING_ALLOWED=NO
+
+  build-ipa-uitest:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (real device, unsigned)
+        run: |
+          xcodebuild build \
+            -project pantherapp.xcodeproj \
+            -scheme pantherapp-uitest \
+            -destination "generic/platform=iOS" \
+            -configuration Release \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO
+
+      - name: Package .ipa
+        run: |
+          APP_PATH="build/Build/Products/Release-iphoneos/pantherapp-uitest.app"
+          mkdir -p Payload
+          cp -r "$APP_PATH" Payload/
+          zip -r pantherapp-uitest.ipa Payload
+
+      - name: Upload .ipa
+        uses: actions/upload-artifact@v4
+        with:
+          name: pantherapp-uitest-ipa
+          path: pantherapp-uitest.ipa

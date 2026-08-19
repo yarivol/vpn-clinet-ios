@@ -83,6 +83,60 @@ targets:
       testTargets:
         - pantherappTests
 
+  # UI-testing-only variant of the main app - same Shared/ source tree, but
+  # no PantherTunnel dependency and no NetworkExtension entitlement, so it
+  # needs no Apple Developer Program membership to sign at all (that
+  # entitlement is the one thing a free/personal-team Apple ID can't get).
+  # The Connect button won't actually establish a VPN (no extension to talk
+  # to), but every other screen - auth, servers list, profile, settings,
+  # protection toggles, traffic stats - is fully live. Built unsigned in CI
+  # (see build-ios-app.yml's build-ipa-uitest job) and meant to be sideloaded
+  # via AltStore/SideStore, which re-sign with the installer's own free
+  # Apple ID - something that only works because this target carries no
+  # entitlement a free account can't have.
+  pantherapp-uitest:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shared
+    info:
+      path: pantherapp-uitest/Info.plist
+      properties:
+        CFBundleDevelopmentRegion: ru
+        CFBundleDisplayName: PantherVPN (UI test)
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.panthervpn.pantherapp.uitest
+            CFBundleURLSchemes: [panthervpn]
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIApplicationSupportsIndirectInputEvents: true
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchLogo
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.panthervpn.pantherapp.uitest
+        PRODUCT_NAME: pantherapp-uitest
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        # No signing identity/team at all - AltStore/SideStore (or a real
+        # Developer Program account later) supply their own when installing.
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        DEVELOPMENT_TEAM: ""
+
   pantherappTests:
     type: bundle.unit-test
     platform: iOS
