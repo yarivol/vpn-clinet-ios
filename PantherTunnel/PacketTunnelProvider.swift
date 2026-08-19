@@ -25,7 +25,6 @@ import os.log
 final class PacketTunnelProvider: NEPacketTunnelProvider {
 
     private var statsTimer: Timer?
-    private var currentServerName: String?
 
     // MARK: - Lifecycle
 
@@ -34,8 +33,6 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             completionHandler(TunnelError.missingConfig)
             return
         }
-        currentServerName = options?["serverName"] as? String
-
         ensureGeoAssets()
 
         let settings = Self.buildTunnelNetworkSettings()

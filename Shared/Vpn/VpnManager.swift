@@ -6,15 +6,17 @@
 //  vpn/VpnManager.kt. Unlike Android (where VpnManager and the VpnService run
 //  in the same process and share state directly via StateFlow), iOS runs the
 //  actual tunnel in a separate Network Extension process (PacketTunnelProvider,
-//  see Shared/Vpn/PacketTunnelProvider.swift + the "PantherTunnel" extension
+//  see PantherTunnel/PacketTunnelProvider.swift, the "PantherTunnel" extension
 //  target). This class only talks to it through NEVPNManager/NETunnelProviderManager
 //  — start/stop, and NEVPNStatusDidChange notifications for connection state.
 //
 //  Requires the "PantherTunnel" Network Extension target (Packet Tunnel
-//  Provider) to exist in the Xcode project with a matching bundle id
-//  ("<main-app-bundle-id>.PantherTunnel") — created via Xcode's own
-//  File > New > Target > Network Extension, not something this file can set
-//  up on its own. See the plan doc for the exact steps.
+//  Provider) to exist with a matching bundle id
+//  ("<main-app-bundle-id>.PantherTunnel") — set up declaratively in
+//  project.yml (see its header comment) via `xcodegen generate`, confirmed
+//  building in CI. Still needs a real device + Apple Developer Program
+//  account to actually exercise at runtime (see PacketTunnelProvider's
+//  "SETUP STATUS" note).
 //
 
 import Foundation
@@ -83,13 +85,17 @@ final class VpnManager {
     /// / CabinetRepository.parseServers. There's no live server-switch API with
     /// Xray-core, so picking a different server while already connected is
     /// always a full disconnect+connect cycle — see the ViewModel's selectServer.
+    /// `serverName` isn't currently sent to the extension (it doesn't do
+    /// anything with a server name yet) — kept as a parameter here since the
+    /// call sites already have it and the system VPN settings entry's
+    /// localizedDescription is a natural, low-effort place to surface it if
+    /// that's ever wanted, without needing to plumb it through the extension.
     func connect(configJson: String, serverName: String?) async {
         connectionState = .connecting
         do {
             let tunnelManager = try await ensureManager()
             let options: [String: NSObject] = [
                 "config": NSString(string: insertTunInbound(configJson)),
-                "serverName": NSString(string: serverName ?? ""),
             ]
             try tunnelManager.connection.startVPNTunnel(options: options)
         } catch {
