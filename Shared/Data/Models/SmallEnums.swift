@@ -14,19 +14,19 @@ enum ConnectionState: Equatable {
     case connected
 }
 
-enum ThemeMode: CaseIterable, Hashable {
+enum ThemeMode: String, CaseIterable, Hashable {
     case dark
     case light
     case system
 }
 
 /// Color-scheme variant, independent of ThemeMode (dark/light) — see settings "Стиль".
-enum ThemeStyle: CaseIterable, Hashable {
+enum ThemeStyle: String, CaseIterable, Hashable {
     case classic
     case original
 }
 
-enum AppLanguage: CaseIterable, Hashable {
+enum AppLanguage: String, CaseIterable, Hashable {
     case system
     case russian
     case english

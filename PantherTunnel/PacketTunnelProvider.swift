@@ -29,7 +29,9 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
     // MARK: - Lifecycle
 
     override func startTunnel(options: [String: NSObject]?, completionHandler: @escaping (Error?) -> Void) {
+        AppLogger.log("startTunnel called", source: "tunnel")
         guard let configJson = options?["config"] as? String, !configJson.isEmpty else {
+            AppLogger.log("startTunnel failed: missing config", source: "tunnel")
             completionHandler(TunnelError.missingConfig)
             return
         }
@@ -39,21 +41,26 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         setTunnelNetworkSettings(settings) { [weak self] error in
             guard let self else { return }
             if let error {
+                AppLogger.log("setTunnelNetworkSettings failed: \(error.localizedDescription)", source: "tunnel")
                 completionHandler(error)
                 return
             }
             do {
                 let fd = try Self.findTunFileDescriptor()
+                AppLogger.log("Found TUN fd \(fd)", source: "tunnel")
                 try Self.startXrayCore(configJson: configJson, tunFd: fd)
+                AppLogger.log("Xray core started", source: "tunnel")
                 self.startStatsPolling()
                 completionHandler(nil)
             } catch {
+                AppLogger.log("startTunnel failed: \(error.localizedDescription)", source: "tunnel")
                 completionHandler(error)
             }
         }
     }
 
     override func stopTunnel(with reason: NEProviderStopReason, completionHandler: @escaping () -> Void) {
+        AppLogger.log("stopTunnel: \(reason)", source: "tunnel")
         statsTimer?.invalidate()
         statsTimer = nil
         Self.stopXrayCore()
@@ -156,7 +163,10 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
         for name in fileNames {
             let target = targetDir.appendingPathComponent(name)
             if FileManager.default.fileExists(atPath: target.path) { continue }
-            guard let bundled = Bundle.main.url(forResource: name, withExtension: nil) else { continue }
+            guard let bundled = Bundle.main.url(forResource: name, withExtension: nil) else {
+                AppLogger.log("Geo asset missing from bundle: \(name)", source: "tunnel")
+                continue
+            }
             try? FileManager.default.copyItem(at: bundled, to: target)
         }
     }
@@ -182,11 +192,14 @@ final class PacketTunnelProvider: NEPacketTunnelProvider {
             if parts[1] == "uplink" { uplink += value }
             if parts[1] == "downlink" { downlink += value }
         }
-        // TODO: surface uplink/downlink to the main app for a live traffic
-        // display, once the UI phase adds one (Android shows this in its
-        // persistent notification — iOS extensions can't post their own
-        // arbitrary notifications the same way; likely needs an app-group
-        // shared container the main app polls, or handleAppMessage).
+        // Logged (not just silently dropped) now that AppLogger's App Group
+        // store gives a cheap way to see it from the Logs screen - still no
+        // dedicated live-traffic UI (Android shows this in its persistent
+        // notification; iOS extensions can't post their own arbitrary
+        // notifications the same way), that's a separate, bigger feature.
+        if uplink > 0 || downlink > 0 {
+            AppLogger.log("Traffic tick: ↑\(uplink)B ↓\(downlink)B", source: "tunnel")
+        }
     }
 
     private enum TunnelError: Error {
@@ -226,9 +239,9 @@ private final class XrayCallbackHandler: NSObject, Libv2rayCoreCallbackHandlerPr
 // Still needs a real Mac + Apple Developer Program account to actually
 // verify, though — this only proves the Swift compiles against the real
 // framework, not that it works over the air:
-// 1. "App Groups" capability isn't wired into project.yml yet — add it to
-//    both targets there if/when main-app <-> extension data sharing is
-//    needed (e.g. the live traffic stats TODO in parseAndLogStats below).
+// 1. App Groups ARE wired into project.yml now (main-app <-> extension
+//    sharing, currently used for AppLogger's shared log buffer). A live
+//    traffic-stats display would reuse the same App Group container.
 // 2. Run on a real device (NetworkExtension doesn't fully function in the
 //    Simulator) and confirm startLoop/stopLoop/the TUN fd scan actually
 //    work end-to-end against a real Xray config.

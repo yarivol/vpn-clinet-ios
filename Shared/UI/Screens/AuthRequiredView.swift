@@ -113,7 +113,7 @@ struct AuthRequiredView: View {
             Button {
                 openURL(botURL)
             } label: {
-                Text("action_open_bot")
+                Text("auth_login_via_telegram")
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
             }

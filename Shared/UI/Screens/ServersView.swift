@@ -139,7 +139,7 @@ private struct ServerRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(server.name)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(colors.textPrimary)
+                        .foregroundStyle(selected ? colors.accent : colors.textPrimary)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     if let pingText {
@@ -149,9 +149,20 @@ private struct ServerRow: View {
                     }
                 }
                 Spacer()
-                Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                    .foregroundStyle(selected ? colors.accent : colors.textSecondary)
-                    .font(.title3)
+                if selected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(colors.accent)
+                        .font(.title3)
+                }
+            }
+        }
+        // Selection reads as an accent-colored outline around the whole
+        // card (matches the app's own visual style) instead of a separate
+        // radio-circle icon - real-device feedback asked for this directly.
+        .overlay {
+            if selected {
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(colors.accent, lineWidth: 2)
             }
         }
     }

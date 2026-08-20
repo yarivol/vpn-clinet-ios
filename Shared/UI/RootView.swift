@@ -18,10 +18,13 @@ struct RootView: View {
     @Environment(\.colorScheme) private var colorScheme
 
     @State private var toast: ToastMessage?
+    @State private var hasAcceptedOnboarding = OnboardingStore.hasAccepted
 
     var body: some View {
         Group {
-            if case .loggedIn = viewModel.authState {
+            if !hasAcceptedOnboarding {
+                OnboardingView { hasAcceptedOnboarding = true }
+            } else if case .loggedIn = viewModel.authState {
                 MainTabView()
             } else {
                 AuthRequiredView()

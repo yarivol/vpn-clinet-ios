@@ -32,6 +32,12 @@ struct SettingsView: View {
                 SettingRow(labelKey: "settings_language", value: languageLabel) { showLanguageDialog = true }
                 SettingRow(labelKey: "settings_style", value: styleLabel) { showStyleDialog = true }
                 SettingRow(labelKey: "settings_theme", value: themeLabel) { showThemeDialog = true }
+
+                NavigationLink(destination: LogsView()) {
+                    SettingRow(labelKey: "settings_logs", value: "", showChevronOverride: true)
+                }
+                .buttonStyle(.plain)
+
                 SettingRow(labelKey: "settings_about", value: String(format: String(localized: "settings_version_format", locale: locale), appVersion))
 
                 Spacer()
@@ -40,20 +46,32 @@ struct SettingsView: View {
             .padding(.top, 4)
         }
         .navigationBarHidden(true)
-        .confirmationDialog("settings_choose_language", isPresented: $showLanguageDialog, titleVisibility: .visible) {
-            ForEach(AppLanguage.allCases, id: \.self) { option in
-                Button(label(for: option)) { viewModel.setLanguage(option) }
-            }
+        .sheet(isPresented: $showLanguageDialog) {
+            OptionPickerSheet(
+                titleKey: "settings_choose_language",
+                options: AppLanguage.allCases,
+                label: { label(for: $0) },
+                isSelected: { $0 == viewModel.language },
+                onSelect: { viewModel.setLanguage($0) }
+            )
         }
-        .confirmationDialog("settings_choose_style", isPresented: $showStyleDialog, titleVisibility: .visible) {
-            ForEach(ThemeStyle.allCases, id: \.self) { option in
-                Button(label(for: option)) { viewModel.setThemeStyle(option) }
-            }
+        .sheet(isPresented: $showStyleDialog) {
+            OptionPickerSheet(
+                titleKey: "settings_choose_style",
+                options: ThemeStyle.allCases,
+                label: { label(for: $0) },
+                isSelected: { $0 == viewModel.themeStyle },
+                onSelect: { viewModel.setThemeStyle($0) }
+            )
         }
-        .confirmationDialog("settings_choose_theme", isPresented: $showThemeDialog, titleVisibility: .visible) {
-            ForEach(ThemeMode.allCases, id: \.self) { option in
-                Button(label(for: option)) { viewModel.setThemeMode(option) }
-            }
+        .sheet(isPresented: $showThemeDialog) {
+            OptionPickerSheet(
+                titleKey: "settings_choose_theme",
+                options: ThemeMode.allCases,
+                label: { label(for: $0) },
+                isSelected: { $0 == viewModel.themeMode },
+                onSelect: { viewModel.setThemeMode($0) }
+            )
         }
     }
 
@@ -107,6 +125,11 @@ private struct SettingRow: View {
     let labelKey: LocalizedStringKey
     let value: String
     var onTap: (() -> Void)?
+    // For rows wrapped in an outer NavigationLink (e.g. Logs below): keep
+    // onTap nil so PantherCard doesn't attach its own competing tap gesture
+    // (same gesture-shadowing issue fixed elsewhere), but still show the
+    // chevron affordance.
+    var showChevronOverride: Bool = false
 
     @Environment(\.pantherColors) private var colors
 
@@ -117,10 +140,12 @@ private struct SettingRow: View {
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(colors.textPrimary)
                 Spacer()
-                Text(value)
-                    .font(.footnote)
-                    .foregroundStyle(colors.textSecondary)
-                if onTap != nil {
+                if !value.isEmpty {
+                    Text(value)
+                        .font(.footnote)
+                        .foregroundStyle(colors.textSecondary)
+                }
+                if onTap != nil || showChevronOverride {
                     Image(systemName: "chevron.right")
                         .font(.footnote)
                         .foregroundStyle(colors.textSecondary)

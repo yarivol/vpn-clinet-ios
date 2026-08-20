@@ -67,12 +67,15 @@ final class VpnViewModel {
         servers.first { $0.id == selectedServerId } ?? servers.first
     }
 
-    // Protection toggles and theme/language have no real backend yet — plain
-    // local state, same as Android's MockVpnRepository placeholder.
+    // Protection toggles have no real backend yet — plain local state, same
+    // as Android's MockVpnRepository placeholder. Theme/style/language ARE
+    // persisted (UserDefaults, see loadThemeMode/loadThemeStyle/loadLanguage
+    // and the set* methods below) - these used to reset every launch, fixed
+    // after real-device testing surfaced it.
     var protectionSettings = ProtectionSettings()
     var themeMode: ThemeMode
     var themeStyle: ThemeStyle
-    var language: AppLanguage = .system
+    var language: AppLanguage
 
     var connectionState: ConnectionState { vpnManager.connectionState }
     var currentDeviceHwid: String { cabinetRepository.currentDeviceHwid }
@@ -106,10 +109,10 @@ final class VpnViewModel {
             authState = .loggedOut
         }
 
-        // Always launches in light/original, matching the app's own designed
-        // look — unless the phone itself is set to dark mode, in which case
-        // it behaves as it always did (dark/classic) rather than fighting
-        // the system setting. Mirrors the same fix applied on Android.
+        // Falls back to light/original (unless the phone itself is in dark
+        // mode) only on first launch, when nothing's been saved yet -
+        // otherwise restores whatever the user last picked in Settings.
+        // Mirrors the same fix applied on Android.
         // NOTE: this ViewModel is constructed before any SwiftUI view has
         // rendered, so UITraitCollection.current may not yet reflect the
         // real system appearance on every iOS version — once the App/root
@@ -118,8 +121,9 @@ final class VpnViewModel {
         // accurate, and calling setThemeMode/setThemeStyle from a
         // .task { } / .onAppear on first launch if still unset.
         let systemIsDark = UITraitCollection.current.userInterfaceStyle == .dark
-        themeMode = systemIsDark ? .dark : .light
-        themeStyle = systemIsDark ? .classic : .original
+        themeMode = Self.loadThemeMode(systemIsDark: systemIsDark)
+        themeStyle = Self.loadThemeStyle(systemIsDark: systemIsDark)
+        language = Self.loadLanguage()
 
         APIClient.shared.tokenProvider = { [authRepository] in authRepository.currentAccessToken() }
 
@@ -140,10 +144,12 @@ final class VpnViewModel {
         do {
             try await authRepository.loginWithMagicLink(token: token)
             authState = .loggedIn(telegramId: authRepository.telegramId ?? -1)
+            AppLogger.log("Login succeeded (magic link)")
             authEvents.emit(.loginSuccess)
             await loadDashboard()
         } catch {
             authState = .error(message: error.localizedDescription)
+            AppLogger.log("Login failed (magic link): \(error.localizedDescription)")
             authEvents.emit(.loginFailed)
         }
     }
@@ -153,10 +159,12 @@ final class VpnViewModel {
         do {
             try await authRepository.loginWithSubscriptionLink(link: link)
             authState = .loggedIn(telegramId: authRepository.telegramId ?? -1)
+            AppLogger.log("Login succeeded (subscription link)")
             authEvents.emit(.loginSuccess)
             await loadDashboard()
         } catch {
             authState = .error(message: error.localizedDescription)
+            AppLogger.log("Login failed (subscription link): \(error.localizedDescription)")
             authEvents.emit(.loginFailed)
         }
     }
@@ -172,6 +180,7 @@ final class VpnViewModel {
         subscription = nil
         trafficStats = nil
         servers = []
+        AppLogger.log("Logged out")
     }
 
     // MARK: - Dashboard
@@ -315,10 +324,12 @@ final class VpnViewModel {
             ?? servers.first
 
         guard let target, let config = target.rawConfig, !config.isEmpty else {
+            AppLogger.log("Connect aborted: no usable config for selected server")
             vpnManager.reportError("vpn_error_config_fetch_failed")
             return
         }
         selectedServerId = target.id
+        AppLogger.log("Connecting to \(target.name)")
         await vpnManager.connect(configJson: config, serverName: target.name)
     }
 
@@ -342,16 +353,37 @@ final class VpnViewModel {
 
     func setThemeMode(_ mode: ThemeMode) {
         themeMode = mode
+        UserDefaults.standard.set(mode.rawValue, forKey: Self.themeModeKey)
     }
 
     func setThemeStyle(_ style: ThemeStyle) {
         themeStyle = style
+        UserDefaults.standard.set(style.rawValue, forKey: Self.themeStyleKey)
     }
 
     func setLanguage(_ language: AppLanguage) {
         self.language = language
+        UserDefaults.standard.set(language.rawValue, forKey: Self.languageKey)
         // Takes effect immediately, no relaunch needed — RootView derives
         // `.environment(\.locale, ...)` from this property, which is
         // SwiftUI's supported in-app language override mechanism.
+    }
+
+    private static let themeModeKey = "settings.themeMode"
+    private static let themeStyleKey = "settings.themeStyle"
+    private static let languageKey = "settings.language"
+
+    private static func loadThemeMode(systemIsDark: Bool) -> ThemeMode {
+        UserDefaults.standard.string(forKey: themeModeKey).flatMap(ThemeMode.init)
+            ?? (systemIsDark ? .dark : .light)
+    }
+
+    private static func loadThemeStyle(systemIsDark: Bool) -> ThemeStyle {
+        UserDefaults.standard.string(forKey: themeStyleKey).flatMap(ThemeStyle.init)
+            ?? (systemIsDark ? .classic : .original)
+    }
+
+    private static func loadLanguage() -> AppLanguage {
+        UserDefaults.standard.string(forKey: languageKey).flatMap(AppLanguage.init) ?? .system
     }
 }

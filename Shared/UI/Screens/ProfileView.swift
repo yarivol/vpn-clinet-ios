@@ -136,16 +136,24 @@ struct ProfileView: View {
         let (value, unit) = formatTrafficParts(viewModel.trafficStats?.usedBytes ?? 0, locale: locale)
         return NavigationLink(value: ProfileDestination.trafficStats) {
             PantherCard {
-                Text("profile_traffic_month")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(colors.textSecondary)
-                Spacer().frame(height: 6)
-                HStack(alignment: .lastTextBaseline, spacing: 4) {
-                    Text(value)
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundStyle(colors.textPrimary)
-                    Text(unit)
-                        .font(.title3)
+                HStack(spacing: 14) {
+                    IconTile(systemImage: "chart.bar.fill", containerColor: colors.accent, contentColor: .white)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("profile_traffic_month")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(colors.textSecondary)
+                        HStack(alignment: .lastTextBaseline, spacing: 4) {
+                            Text(value)
+                                .font(.system(size: 26, weight: .bold))
+                                .foregroundStyle(colors.textPrimary)
+                            Text(unit)
+                                .font(.subheadline)
+                                .foregroundStyle(colors.textSecondary)
+                        }
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.footnote)
                         .foregroundStyle(colors.textSecondary)
                 }
             }

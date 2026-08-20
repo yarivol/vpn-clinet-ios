@@ -11,9 +11,17 @@
 "auth_signing_in" = "Signing in…";
 "auth_required_title" = "Sign-In Required";
 "auth_required_subtitle" = "Paste the subscription link you got from the bot or the website";
-"auth_link_placeholder" = "Subscription link";
+"auth_link_placeholder" = "Connection link";
 "auth_link_error" = "Invalid link. Check it and try again";
 "auth_bot_hint" = "Sign in through the PantherVPN Telegram bot — open the bot and tap “Open App” in the “My Subscription” section";
+"auth_login_via_telegram" = "Log In via Telegram";
+
+/* Onboarding (first launch only) */
+"onboarding_title" = "Welcome to PantherVPN";
+"onboarding_body" = "By continuing, you agree to the Terms of Use and Privacy Policy governing use of the service.";
+"onboarding_accept" = "Accept and Continue";
+"onboarding_privacy_policy" = "Privacy Policy";
+"onboarding_terms_of_use" = "Terms of Use";
 
 /* Tabs */
 "tab_home" = "Home";
@@ -80,6 +88,7 @@
 "settings_language" = "Language";
 "settings_style" = "Style";
 "settings_theme" = "Theme";
+"settings_logs" = "Logs";
 "settings_about" = "About";
 "settings_version_format" = "Version %@";
 "settings_choose_language" = "Choose language";
@@ -112,6 +121,11 @@
 "month_short_10" = "Oct";
 "month_short_11" = "Nov";
 "month_short_12" = "Dec";
+
+/* Logs */
+"logs_title" = "Logs";
+"logs_empty" = "No entries yet";
+"logs_clear" = "Clear logs";
 
 /* Toasts / VPN errors (keys also used directly as VpnManager.reportError reason keys) */
 "toast_login_success" = "Signed in successfully";

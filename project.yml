@@ -70,6 +70,11 @@ targets:
       properties:
         com.apple.developer.networking.networkextension:
           - packet-tunnel-provider
+        # Lets AppLogger share one log buffer with PantherTunnel (see its
+        # own entitlements below) - free/personal-team accounts can use App
+        # Groups fine, unlike the networkextension entitlement above.
+        com.apple.security.application-groups:
+          - group.com.panthervpn.pantherapp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.panthervpn.pantherapp
@@ -159,6 +164,10 @@ targets:
     platform: iOS
     sources:
       - path: PantherTunnel
+      # Compiled into this target too (alongside the main app) so both
+      # processes share one AppLogger implementation - see its own header
+      # comment for why this is a plain shared file, not a framework.
+      - path: Shared/Support/AppLogger.swift
     info:
       path: PantherTunnel/Info.plist
       properties:
@@ -171,6 +180,8 @@ targets:
       properties:
         com.apple.developer.networking.networkextension:
           - packet-tunnel-provider
+        com.apple.security.application-groups:
+          - group.com.panthervpn.pantherapp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.panthervpn.pantherapp.PantherTunnel

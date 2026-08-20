@@ -67,7 +67,11 @@ final class VpnManager {
 
     @objc private func statusDidChange(_ notification: Notification) {
         guard let connection = notification.object as? NEVPNConnection else { return }
-        connectionState = Self.mapStatus(connection.status)
+        let newState = Self.mapStatus(connection.status)
+        if newState != connectionState {
+            AppLogger.log("NEVPNStatusDidChange: \(connection.status) -> \(newState)")
+        }
+        connectionState = newState
     }
 
     private func syncStateFromManager() {
@@ -85,6 +89,7 @@ final class VpnManager {
     }
 
     func reportError(_ reasonKey: String) {
+        AppLogger.log("VPN error: \(reasonKey)")
         connectionState = .disconnected
         errorEvents.emit(reasonKey)
     }
@@ -106,12 +111,15 @@ final class VpnManager {
                 "config": NSString(string: insertTunInbound(configJson)),
             ]
             try tunnelManager.connection.startVPNTunnel(options: options)
+            AppLogger.log("startVPNTunnel called successfully")
         } catch {
+            AppLogger.log("startVPNTunnel threw: \(error.localizedDescription)")
             reportError("vpn_error_tunnel_failed")
         }
     }
 
     func disconnect() {
+        AppLogger.log("Disconnect requested")
         manager?.connection.stopVPNTunnel()
     }
 
@@ -130,6 +138,7 @@ final class VpnManager {
         tunnelManager.localizedDescription = "PantherVPN"
         tunnelManager.isEnabled = true
         try await tunnelManager.saveToPreferences()
+        AppLogger.log("VPN configuration saved to preferences")
         try await tunnelManager.loadFromPreferences()
         manager = tunnelManager
         return tunnelManager

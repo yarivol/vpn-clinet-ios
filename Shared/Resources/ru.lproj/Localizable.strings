@@ -11,9 +11,17 @@
 "auth_signing_in" = "Входим…";
 "auth_required_title" = "Нужен вход";
 "auth_required_subtitle" = "Вставьте ссылку подписки, которую вы получили от бота или на сайте";
-"auth_link_placeholder" = "Ссылка подписки";
+"auth_link_placeholder" = "Ссылка для подключения";
 "auth_link_error" = "Неверная ссылка. Проверьте и попробуйте снова";
 "auth_bot_hint" = "Войдите через Telegram-бота PantherVPN — откройте бота и нажмите «Открыть приложение» в разделе «Моя подписка»";
+"auth_login_via_telegram" = "Войти через Telegram";
+
+/* Onboarding (first launch only) */
+"onboarding_title" = "Добро пожаловать в PantherVPN";
+"onboarding_body" = "Продолжая, вы соглашаетесь с Пользовательским соглашением и Политикой конфиденциальности, которые регулируют использование сервиса.";
+"onboarding_accept" = "Принять и продолжить";
+"onboarding_privacy_policy" = "Политика конфиденциальности";
+"onboarding_terms_of_use" = "Пользовательское соглашение";
 
 /* Tabs */
 "tab_home" = "Главная";
@@ -80,6 +88,7 @@
 "settings_language" = "Язык";
 "settings_style" = "Стиль";
 "settings_theme" = "Тема";
+"settings_logs" = "Логи";
 "settings_about" = "О приложении";
 "settings_version_format" = "Версия %@";
 "settings_choose_language" = "Выберите язык";
@@ -112,6 +121,11 @@
 "month_short_10" = "окт";
 "month_short_11" = "ноя";
 "month_short_12" = "дек";
+
+/* Logs */
+"logs_title" = "Логи";
+"logs_empty" = "Пока нет записей";
+"logs_clear" = "Очистить логи";
 
 /* Toasts / VPN errors (keys also used directly as VpnManager.reportError reason keys) */
 "toast_login_success" = "Успешная авторизация";
