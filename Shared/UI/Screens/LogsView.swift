@@ -44,6 +44,18 @@ struct LogsView: View {
         }
         .navigationBarHidden(true)
         .onAppear { reload() }
+        // AppLogger isn't observed reactively (no Combine/notification, see
+        // its header comment) - without this, a log written while this
+        // screen is already open (e.g. watching a connect attempt happen)
+        // wouldn't show up until leaving and re-entering. Cheap enough at
+        // this scale (JSON-decoding <=300 small entries) to just poll.
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_500_000_000)
+                guard !Task.isCancelled else { return }
+                reload()
+            }
+        }
     }
 
     private var header: some View {
