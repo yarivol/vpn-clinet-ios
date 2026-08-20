@@ -9,7 +9,11 @@
 
 import SwiftUI
 
-private let botURL = URL(string: "https://t.me/PantherVPNBot")!
+// ?start=login_app - Telegram forwards this as `/start login_app` to the
+// bot, which then skips its normal menu and replies directly with the
+// "Open App" magic-link button (see bot/handlers/common.py's
+// _extract_login_deep_link) so the user doesn't have to find it themselves.
+private let botURL = URL(string: "https://t.me/PantherVPNBot?start=login_app")!
 
 struct AuthRequiredView: View {
     @Environment(VpnViewModel.self) private var viewModel
