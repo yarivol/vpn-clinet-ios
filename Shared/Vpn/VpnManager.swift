@@ -105,8 +105,24 @@ final class VpnManager {
     /// that's ever wanted, without needing to plumb it through the extension.
     func connect(configJson: String, serverName: String?) async {
         connectionState = .connecting
+
+        // Split into two try/catch blocks (rather than one wrapping both
+        // calls) specifically so the log attributes a failure to whichever
+        // call actually threw - a real device test showed a misleading log
+        // ("startVPNTunnel threw") for what was almost certainly actually a
+        // saveToPreferences() failure inside ensureManager(), since the
+        // "VPN configuration saved to preferences" log line never appeared
+        // before it.
+        let tunnelManager: NETunnelProviderManager
         do {
-            let tunnelManager = try await ensureManager()
+            tunnelManager = try await ensureManager()
+        } catch {
+            AppLogger.log("ensureManager() threw: \(error.localizedDescription)")
+            handleConnectFailure(error)
+            return
+        }
+
+        do {
             let options: [String: NSObject] = [
                 "config": NSString(string: insertTunInbound(configJson)),
             ]
@@ -114,17 +130,21 @@ final class VpnManager {
             AppLogger.log("startVPNTunnel called successfully")
         } catch {
             AppLogger.log("startVPNTunnel threw: \(error.localizedDescription)")
-            // .permissionDenied specifically means iOS refused to activate the
-            // VPN configuration because this build isn't properly entitled
-            // (confirmed live: sideloaded builds signed with a free/personal
-            // Apple ID hit exactly this, every time, not intermittently) -
-            // "try again" is actively misleading for that case, so it gets
-            // its own, more accurate message instead of the generic one.
-            if let nevpnError = error as? NEVPNError, nevpnError.code == .permissionDenied {
-                reportError("vpn_error_permission_denied")
-            } else {
-                reportError("vpn_error_tunnel_failed")
-            }
+            handleConnectFailure(error)
+        }
+    }
+
+    // .permissionDenied specifically means iOS refused to activate the VPN
+    // configuration because this build isn't properly entitled (confirmed
+    // live: sideloaded builds signed with a free/personal Apple ID hit
+    // exactly this, every time, not intermittently) - "try again" is
+    // actively misleading for that case, so it gets its own, more accurate
+    // message instead of the generic one.
+    private func handleConnectFailure(_ error: Error) {
+        if let nevpnError = error as? NEVPNError, nevpnError.code == .permissionDenied {
+            reportError("vpn_error_permission_denied")
+        } else {
+            reportError("vpn_error_tunnel_failed")
         }
     }
 
