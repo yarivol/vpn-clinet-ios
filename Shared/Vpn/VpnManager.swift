@@ -114,7 +114,17 @@ final class VpnManager {
             AppLogger.log("startVPNTunnel called successfully")
         } catch {
             AppLogger.log("startVPNTunnel threw: \(error.localizedDescription)")
-            reportError("vpn_error_tunnel_failed")
+            // .permissionDenied specifically means iOS refused to activate the
+            // VPN configuration because this build isn't properly entitled
+            // (confirmed live: sideloaded builds signed with a free/personal
+            // Apple ID hit exactly this, every time, not intermittently) -
+            // "try again" is actively misleading for that case, so it gets
+            // its own, more accurate message instead of the generic one.
+            if let nevpnError = error as? NEVPNError, nevpnError.code == .permissionDenied {
+                reportError("vpn_error_permission_denied")
+            } else {
+                reportError("vpn_error_tunnel_failed")
+            }
         }
     }
 
