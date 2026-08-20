@@ -134,14 +134,24 @@ final class VpnManager {
         }
     }
 
-    // .permissionDenied specifically means iOS refused to activate the VPN
+    // A permission/entitlement failure means iOS refused to activate the VPN
     // configuration because this build isn't properly entitled (confirmed
     // live: sideloaded builds signed with a free/personal Apple ID hit
     // exactly this, every time, not intermittently) - "try again" is
     // actively misleading for that case, so it gets its own, more accurate
     // message instead of the generic one.
+    //
+    // Matched by localizedDescription text rather than a specific
+    // NEVPNError.Code case: an earlier attempt at `nevpnError.code ==
+    // .permissionDenied` didn't even compile (that case doesn't exist on
+    // NEVPNError.Code - confirmed by CI, not by any real Apple
+    // documentation I could verify from here), and NetworkExtension's exact
+    // set of error cases isn't something worth guessing at twice. This is
+    // less type-safe but matches the literal string a real device actually
+    // produced ("permission denied"), regardless of which underlying error
+    // type/domain iOS wraps it in.
     private func handleConnectFailure(_ error: Error) {
-        if let nevpnError = error as? NEVPNError, nevpnError.code == .permissionDenied {
+        if error.localizedDescription.localizedCaseInsensitiveContains("permission") {
             reportError("vpn_error_permission_denied")
         } else {
             reportError("vpn_error_tunnel_failed")
